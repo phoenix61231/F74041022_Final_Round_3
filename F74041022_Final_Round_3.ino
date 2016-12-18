@@ -36,9 +36,9 @@ Ultrasonic right(right_trig, right_echo);
 BRCClient brcClient(UART_RX, UART_TX);
 
 int v = 130,last_cross, mapping_front=0, mapping_cross=0;
-float front_dis, right_dis, left_dis, temp=0.0;
+float front_dis, right_dis, left_dis;
 bool back = false, front_sta, left_sta, right_sta,go=false;
-bool mapping[6][6] = {true},inf_loop = false;
+bool mapping[6][6] = {false},inf_loop = false;
 
 void for_back(int mot_1,int mot_2,int dur){
   analogWrite(mot_1, v);
@@ -107,31 +107,11 @@ void loop() {
   right_dis = right.convert(right_sec, Ultrasonic::CM);
   CommMsg msg;
   if (brcClient.receiveMessage(&msg)) {
-      if (msg.type==MSG_ROUND_START){
-        go=true;
-      }
-      else if(msg.type==MSG_ROUND_END){
-        brcClient.endBRCClient();
-        go=false;       
-      }
-  }
-  //紀錄路徑
-  if(temp==0.0){
-    temp = front_dis;
-  }
-  else{
-    if(front_dis-temp>28){
-      temp=front_dis;
-      mapping[mapping_cross][mapping_front] = false;
-      mapping_front++;
+    switch(msg.type){
+      case MSG_ROUND_START:go=true;break;
+      case MSG_ROUND_END: brcClient.endBRCClient(); go=false; break;
     }
   }  
-  //不合理
-  /*if(front_dis>500 || right_dis>500 || left_dis>500){
-    front_sta = true;
-    left_sta = true;
-    right_sta = true;
-  }*/
   //按照路線判斷走
   if (go==true) {
     //直線校正
