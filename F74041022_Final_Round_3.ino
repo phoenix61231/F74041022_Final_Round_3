@@ -1,31 +1,43 @@
 #include <Ultrasonic.h>
 #include <BRCClient.h>
+#include <SPI.h>
+#include <RFID.h>
+//define pin
+#define motor_right_back 3
+#define motor_right_for 4
+#define motor_left_back 5
+#define motor_left_for 6
 #define front_trig 26 
 #define front_echo 27 
 #define left_trig 22
 #define left_echo 23
 #define right_trig 24
 #define right_echo 25
-#define motor_right_back 3
-#define motor_right_for 4
-#define motor_left_back 5
-#define motor_left_for 6
 
+#define UART_RX 10
+#define UART_TX 2
+#define SPI_MISO 50
+#define SPI_MOSI 51
+#define SPI_SCLK 52
+#define SPI_SS 53
+#define MFRC522_RSTPD 11
+
+//define dir
 #define front_dir 0
 #define left_dir 1
 #define right_dir 2
 
-#define UART_RX 10
-#define UART_TX 2
-
+//define AP(test)
 #define AP_SSID    "Test_Server_AP"
 #define AP_PASSWD  "testserverap"
 #define TCP_IP     "192.168.43.1"
 
+//define AP(programtheworld)
 //#define AP_SSID    "programtheworld"
 //#define AP_PASSWD  "screamlab"
 //#define TCP_IP     "192.168.150.11"
 
+//define information
 #define TCP_PORT   5000
 #define MY_COMM_ID 0x23
 #define PARTNER_COMM_ID 0x24
@@ -34,6 +46,7 @@ Ultrasonic front(front_trig, front_echo);
 Ultrasonic left(left_trig, left_echo);
 Ultrasonic right(right_trig, right_echo);
 BRCClient brcClient(UART_RX, UART_TX);
+RFID rfid(SPI_SS, MFRC522_RSTPD);
 
 int v = 130,last_cross, mapping_front=0, mapping_cross=0;
 float front_dis, right_dis, left_dis;
@@ -75,6 +88,11 @@ void line(int front,int left,int right){
   }
 }
 void setup() {
+  
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(10000000L, MSBFIRST, SPI_MODE3));
+  rfid.begin();
+
   Serial.begin(9600);
   pinMode(motor_right_back, OUTPUT);
   pinMode(motor_right_for, OUTPUT);
@@ -89,15 +107,17 @@ void setup() {
 
   brcClient.begin(9600);
   brcClient.beginBRCClient(AP_SSID, AP_PASSWD, TCP_IP, TCP_PORT);
-
-  delay(500);
+    
   if (brcClient.registerID(MY_COMM_ID))
     Serial.println("ID register OK");
   else
     Serial.println("ID register FAIL");
 
 }
-//調整轉彎後前進距離
+
+static uint8_t status;
+static uint16_t card_type;
+static uint8_t sn[MAXRLEN], snBytes;
 
 void loop() {
   //測距
@@ -111,7 +131,19 @@ void loop() {
       case MSG_ROUND_START:go=true;break;
       case MSG_ROUND_END: brcClient.endBRCClient(); go=false; break;
     }
-  }  
+  } 
+  if ((status = rfid.findTag(&card_type)) == STATUS_OK) {
+    Serial.print("OK! ");
+    Serial.println(card_type);
+    if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {
+      for (int i = 0; i < snBytes; ++i)
+        Serial.print(sn[i], HEX);
+      Serial.println();
+      rfid.piccHalt();
+    }
+  } else
+    Serial.println("No tag.");
+   
   //按照路線判斷走
   if (go==true) {
     //直線校正
@@ -140,28 +172,22 @@ void loop() {
                  for_back(motor_right_for,motor_left_for,500);
                 break;
               case false:  
-                //TTF 
-                //if(mapping[mapping_cross][mapping_front]) { 
-                  for_back(motor_right_for,motor_left_for,150);
-                  turn(motor_right_for,560);
-                  for_back(motor_right_for,motor_left_for,1000);                
-                  last_cross = left_dir;
-                  //mapping_cross++;                             
-                //}               
+                //TTF                
+                 for_back(motor_right_for,motor_left_for,150);
+                 turn(motor_right_for,560);
+                 for_back(motor_right_for,motor_left_for,1000);                
+                 last_cross = left_dir;                  
                 break;
             }
             break;
           case false:
             switch (right_sta) {
               case true:
-                //TFT
-                //if(mapping[mapping_cross][mapping_front]) {
+                //TFT                
                   for_back(motor_right_for,motor_left_for,150); 
                   turn(motor_left_for,560);                
                   for_back(motor_right_for,motor_left_for,1000);
-                  last_cross = right_dir ;
-                  //mapping_cross++;                            
-                //}                
+                  last_cross = right_dir ;                             
                 break;
               case false:
                 //TFF
@@ -192,15 +218,13 @@ void loop() {
                 }
                 turn(motor_left_for,560);                
                 for_back(motor_right_for,motor_left_for,1000);
-                last_cross = front_dir;
-                //mapping_cross++;
+                last_cross = front_dir;                
                 break;
               case false:
                 //FTF
                 for_back(motor_right_for,motor_left_for,150);
                 turn(motor_right_for,560); 
-                for_back(motor_right_for,motor_left_for,1000);
-                //mapping_cross++;
+                for_back(motor_right_for,motor_left_for,1000);                
                 break;
             }
             break;
@@ -210,8 +234,7 @@ void loop() {
                 //FFT
                 for_back(motor_right_for,motor_left_for,150);
                 turn(motor_left_for,560); 
-                for_back(motor_right_for,motor_left_for,1000);
-                //mapping_cross++;
+                for_back(motor_right_for,motor_left_for,1000);                
                 break;
               case false:
                 //FFF                
