@@ -1,5 +1,8 @@
 #include <Ultrasonic.h>
+#include <SPI.h>
 #include <BRCClient.h>
+#include <RFID.h>
+
 #define front_trig 26
 #define front_echo 27
 #define left_trig 22
@@ -34,9 +37,10 @@ Ultrasonic front(front_trig, front_echo);
 Ultrasonic left(left_trig, left_echo);
 Ultrasonic right(right_trig, right_echo);
 BRCClient brcClient(UART_RX, UART_TX);
+RFID rfid(SPI_SS, MFRC522_RSTPD);
 
 int v = 130,last_cross, map_i, map_j=0;
-float front_dis, right_dis, left_dis, temp=0.0;
+float front_dis, right_dis, left_dis;
 bool back = false, front_sta, left_sta, right_sta,go=false,finish=false;
 bool mapping[6][6] = {false},inf_loop = false;
 
