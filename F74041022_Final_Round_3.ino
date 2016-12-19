@@ -49,10 +49,10 @@ Ultrasonic right(right_trig, right_echo);
 BRCClient brcClient(UART_RX, UART_TX);
 RFID rfid(SPI_SS, MFRC522_RSTPD);
 
-int v = 130,last_cross, mapping_front=0, mapping_cross=0;
+int v = 130,last_cross,map_i,map_j;
 float front_dis, right_dis, left_dis;
-bool back = false, front_sta, left_sta, right_sta,go=false;
-bool mapping[6][6] = {false},inf_loop = false;
+bool back = false, front_sta, left_sta, right_sta,go=false,finish=false;
+bool mapping[6][6]={false},inf_loop = false;
 
 void for_back(int mot_1,int mot_2,int dur){
   analogWrite(mot_1, v);
@@ -131,24 +131,28 @@ void loop() {
     switch(msg.type){
       case MSG_ROUND_START:go=true;break;
       case MSG_ROUND_END: brcClient.endBRCClient(); go=false; break;
+      //case MSG_REQUEST_RFID:mapbreak;
     }
   } 
+  
   if ((status = rfid.findTag(&card_type)) == STATUS_OK) {
     Serial.print("OK! ");
     Serial.println(card_type);
     if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {
       for (int i = 0; i < snBytes; ++i){
         Serial.print(sn[i], HEX);
-        Serial.println();
-        delay(1000);
-      }      
+        Serial.println();        
+      }
+      msg.type=MSG_REQUEST_RFID;          
+      brcClient.sendMessage(&msg);     
       rfid.piccHalt();
     }
   } else
     Serial.println("No tag.");
+  
    
   //按照路線判斷走
-  if (go==true) {
+  if (go==true&&back==false) {
     //直線校正
     line(front_dis,left_dis,right_dis); 
     //路線判斷
@@ -250,9 +254,33 @@ void loop() {
         break;
     }
   }
-  else if(back==true){
-     brcClient.sendToClient(PARTNER_COMM_ID,"go!");
-     back=false;   
+  else if(go==false&&back==true){
+    if (left_sta != false && right_sta != false) {
+      switch (last_cross) {
+        case 0:
+          for_back(motor_right_for,motor_left_for,1000);
+          break;
+        case 1:
+          for_back(motor_right_for,motor_left_for,50);
+          turn(motor_right_for,590);          
+          for_back(motor_right_for,motor_left_for,1000);
+          break;
+        case 2:
+          for_back(motor_right_for,motor_left_for,50);
+          turn(motor_left_for,590);
+          for_back(motor_right_for,motor_left_for,1000);
+          break;        
+      }
+      go = true;
+      back = false;
+    }
+    else {
+      for_back(motor_right_for,motor_left_for,200);
+    }    
+  }
+  
+  if(finish==true){
+     //        
   }
 }
 
