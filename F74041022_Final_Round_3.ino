@@ -2,6 +2,7 @@
 #include <BRCClient.h>
 #include <SPI.h>
 #include <RFID.h>
+
 //define pin
 #define motor_right_back 3
 #define motor_right_for 4
@@ -136,9 +137,11 @@ void loop() {
     Serial.print("OK! ");
     Serial.println(card_type);
     if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {
-      for (int i = 0; i < snBytes; ++i)
+      for (int i = 0; i < snBytes; ++i){
         Serial.print(sn[i], HEX);
-      Serial.println();
+        Serial.println();
+        delay(1000);
+      }      
       rfid.piccHalt();
     }
   } else
