@@ -33,6 +33,12 @@
 #define MY_COMM_ID 0x23
 #define PARTNER_COMM_ID 0x24
 
+#define SPI_MOSI 51
+#define SPI_MISO 50
+#define SPI_SCLK 52
+#define SPI_SS   53
+#define MFRC522_RSTPD 11
+
 Ultrasonic front(front_trig, front_echo);
 Ultrasonic left(left_trig, left_echo);
 Ultrasonic right(right_trig, right_echo);
@@ -79,7 +85,6 @@ void line(int front,int left,int right){
   }
 }
 void setup() {
-  Serial.begin(9600);
   pinMode(motor_right_back, OUTPUT);
   pinMode(motor_right_for, OUTPUT);
   pinMode(motor_left_back, OUTPUT);
@@ -88,6 +93,14 @@ void setup() {
   analogWrite(motor_right_back, 0);
   analogWrite(motor_left_for, 0);
   analogWrite(motor_left_back, 0);
+
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(10000000L, MSBFIRST, SPI_MODE3));
+
+  rfid.begin();
+  
+  Serial.begin(9600);
+  
   while (!Serial)
     ;
 
@@ -102,12 +115,29 @@ void setup() {
 }
 //調整轉彎後前進距離
 
+static uint8_t status;
+static uint16_t card_type;
+static uint8_t sn[MAXRLEN], snBytes;
+
 void loop() {
   //測距
   long front_sec = front.timing(), left_sec = left.timing(), right_sec = right.timing();
   front_dis = front.convert(front_sec, Ultrasonic::CM);
   left_dis = left.convert(left_sec, Ultrasonic::CM);
   right_dis = right.convert(right_sec, Ultrasonic::CM);
+
+  if ((status = rfid.findTag(&card_type)) == STATUS_OK) {
+    Serial.print("OK! ");
+    Serial.println(card_type);
+    if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {
+      for (int i = 0; i < snBytes; ++i)
+        Serial.print(sn[i], HEX);
+      Serial.println();
+      rfid.piccHalt();
+    }
+  } else
+    Serial.println("No tag.");
+  
   CommMsg msg;
   if (brcClient.receiveMessage(&msg)) {
       if (msg.type==MSG_ROUND_START){
