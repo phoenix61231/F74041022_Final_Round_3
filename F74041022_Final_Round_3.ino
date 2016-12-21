@@ -260,7 +260,12 @@ void loop() {
                 break;
               case false:
                 //FFF
-                for_back(motor_right_for,motor_left_back,600);
+                if(right_dis>left_dis){
+                  for_back(motor_right_back,motor_left_for,620);
+                }
+                else{
+                  for_back(motor_right_for,motor_left_back,620);
+                }                
                 back = true;
                 break;
             }
