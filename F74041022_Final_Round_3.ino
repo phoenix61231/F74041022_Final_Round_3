@@ -163,12 +163,12 @@ void loop() {
     else {  front_sta = true;
     }
        
-    if (left_dis >= 30) { left_sta = true;
+    if (left_dis >= 28) { left_sta = true;
     }
     else {  left_sta = false;
     }
     
-    if (right_dis >= 30) {  right_sta = true;
+    if (right_dis >= 28) {  right_sta = true;
     }
     else {  right_sta = false;
     }    
