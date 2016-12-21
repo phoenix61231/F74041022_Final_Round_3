@@ -21,9 +21,13 @@
 #define UART_RX 10
 #define UART_TX 2
 
-#define AP_SSID    "Test_Server_AP"
-#define AP_PASSWD  "testserverap"
-#define TCP_IP     "192.168.43.1"
+#define AP_SSID "PoPo"
+#define AP_PASSWD "07270727"
+#define TCP_IP "192.168.43.1"
+
+//#define AP_SSID    "Test_Server_AP"
+//#define AP_PASSWD  "testserverap"
+//#define TCP_IP     "192.168.43.1"
 
 //#define AP_SSID    "programtheworld"
 //#define AP_PASSWD  "screamlab"
