@@ -75,13 +75,13 @@ void line(int front,int left,int right){
     left_sta = true;
     right_sta = true;
   }
-  else if (left < 6.5) {
+  else if (left < 6) {
     turn(motor_right_back,190);
     front_sta = true;
     left_sta = true;
     right_sta = true;   
   }
-  else if (right < 6.5) {
+  else if (right < 6) {
     turn(motor_left_back,190);
     front_sta = true;
     left_sta = true;
@@ -183,14 +183,14 @@ void loop() {
             switch (right_sta) {
               case true:
                 //TTT                
-                for_back(motor_right_for,motor_left_for,500);
+                for_back(motor_right_for,motor_left_for,1500);
                 break;
               case false:  
                 //TTF
                 if(front_dis>left_dis){
                   for_back(motor_right_for,motor_left_for,160);           
                   turn(motor_right_for,570);                
-                  for_back(motor_right_for,motor_left_for,1000);
+                  //for_back(motor_right_for,motor_left_for,1000);
                   last_cross = left_dir;
                 }
                 else{                             
@@ -207,7 +207,7 @@ void loop() {
                 if(front_dis>right_dis){
                   for_back(motor_right_for,motor_left_for,160);           
                   turn(motor_left_for,570);                
-                  for_back(motor_right_for,motor_left_for,1000);
+                  //for_back(motor_right_for,motor_left_for,1000);
                   last_cross = right_dir;
                 }
                 else{                             
@@ -232,13 +232,13 @@ void loop() {
                 if(left_dis>right_dis){
                   for_back(motor_right_for,motor_left_for,160);           
                   turn(motor_left_for,570);                
-                  for_back(motor_right_for,motor_left_for,1000);
+                  //for_back(motor_right_for,motor_left_for,1000);
                   last_cross = front_dir;
                 }
                 else{
                   for_back(motor_right_for,motor_left_for,160);           
                   turn(motor_right_for,570);                
-                  for_back(motor_right_for,motor_left_for,1000);
+                  //for_back(motor_right_for,motor_left_for,1000);
                   last_cross = front_dir;
                 }                               
                 break;
@@ -246,7 +246,7 @@ void loop() {
                 //FTF
                 for_back(motor_right_for,motor_left_for,160);
                 turn(motor_right_for,570); 
-                for_back(motor_right_for,motor_left_for,1000);                
+                //for_back(motor_right_for,motor_left_for,1000);                
                 break;
             }
             break;
@@ -256,7 +256,7 @@ void loop() {
                 //FFT
                 for_back(motor_right_for,motor_left_for,160);
                 turn(motor_left_for,570); 
-                for_back(motor_right_for,motor_left_for,1000);                
+                //for_back(motor_right_for,motor_left_for,1000);                
                 break;
               case false:
                 //FFF
@@ -291,12 +291,12 @@ void loop() {
           for_back(motor_right_for,motor_left_for,1000);
           break;
         case 1:
-          for_back(motor_right_for,motor_left_for,100);
+          for_back(motor_right_for,motor_left_for,120);
           turn(motor_right_for,580);          
           for_back(motor_right_for,motor_left_for,1000);
           break;
         case 2:
-          for_back(motor_right_for,motor_left_for,100);
+          for_back(motor_right_for,motor_left_for,120);
           turn(motor_left_for,580);
           for_back(motor_right_for,motor_left_for,1000);
           break;        
