@@ -21,13 +21,13 @@
 #define UART_RX 10
 #define UART_TX 2
 
-#define AP_SSID "PoPo"
-#define AP_PASSWD "07270727"
-#define TCP_IP "192.168.43.1"
+//#define AP_SSID "PoPo"
+//#define AP_PASSWD "07270727"
+//#define TCP_IP "192.168.43.1"
 
-//#define AP_SSID    "Test_Server_AP"
-//#define AP_PASSWD  "testserverap"
-//#define TCP_IP     "192.168.43.1"
+#define AP_SSID    "Test_Server_AP"
+#define AP_PASSWD  "testserverap"
+#define TCP_IP     "192.168.43.1"
 
 //#define AP_SSID    "programtheworld"
 //#define AP_PASSWD  "screamlab"
@@ -49,7 +49,7 @@ Ultrasonic right(right_trig, right_echo);
 BRCClient brcClient(UART_RX, UART_TX);
 RFID rfid(SPI_SS, MFRC522_RSTPD);
 
-int v = 130,last_cross, map_i, map_j=0;
+int v = 130,last_cross, map_i, map_j;
 float front_dis, right_dis, left_dis;
 bool back = false, front_sta, left_sta, right_sta,go=false,finish=false;
 bool mapping[6][6] = {false},inf_loop = false;
@@ -75,14 +75,14 @@ void line(int front,int left,int right){
     left_sta = true;
     right_sta = true;
   }
-  else if (left < 5) {
-    turn(motor_right_back,200);
+  else if (left < 7) {
+    turn(motor_right_back,180);
     front_sta = true;
     left_sta = true;
     right_sta = true;   
   }
-  else if (right < 5) {
-    turn(motor_left_back,200);
+  else if (right < 7) {
+    turn(motor_left_back,180);
     front_sta = true;
     left_sta = true;
     right_sta = true;    
@@ -183,11 +183,17 @@ void loop() {
                 for_back(motor_right_for,motor_left_for,500);
                 break;
               case false:  
-                //TTF                  
-                for_back(motor_right_for,motor_left_for,150);
-                turn(motor_right_for,570);
-                for_back(motor_right_for,motor_left_for,1000);                
-                last_cross = left_dir;                         
+                //TTF
+                if(front_dis>left_dis){
+                  for_back(motor_right_for,motor_left_for,150);           
+                  turn(motor_right_for,570);                
+                  for_back(motor_right_for,motor_left_for,1000);
+                  last_cross = left_dir;
+                }
+                else{                             
+                  for_back(motor_right_for,motor_left_for,500);                 
+                  last_cross = right_dir;
+                }                                      
                 break;
             }
             break;
@@ -195,14 +201,20 @@ void loop() {
             switch (right_sta) {
               case true:
                 //TFT                
-                for_back(motor_right_for,motor_left_for,150); 
-                turn(motor_left_for,570);                
-                for_back(motor_right_for,motor_left_for,1000);
-                last_cross = right_dir ;                               
+                if(front_dis>right_dis){
+                  for_back(motor_right_for,motor_left_for,150);           
+                  turn(motor_left_for,570);                
+                  for_back(motor_right_for,motor_left_for,1000);
+                  last_cross = right_dir;
+                }
+                else{                             
+                  for_back(motor_right_for,motor_left_for,500);                 
+                  last_cross = left_dir;
+                }                               
                 break;
               case false:
                 //TFF
-                for_back(motor_right_for,motor_left_for,100);
+                for_back(motor_right_for,motor_left_for,50);
                 break;
             }
             break;
@@ -213,11 +225,19 @@ void loop() {
           case true:
             switch (right_sta) {
               case true:
-                //FTT     
-                for_back(motor_right_for,motor_left_for,150);           
-                turn(motor_left_for,570);                
-                for_back(motor_right_for,motor_left_for,1000);
-                last_cross = front_dir;                
+                //FTT
+                if(left_dis>right_dis){
+                  for_back(motor_right_for,motor_left_for,150);           
+                  turn(motor_left_for,570);                
+                  for_back(motor_right_for,motor_left_for,1000);
+                  last_cross = front_dir;
+                }
+                else{
+                  for_back(motor_right_for,motor_left_for,150);           
+                  turn(motor_left_for,570);                
+                  for_back(motor_right_for,motor_left_for,1000);
+                  last_cross = front_dir;
+                }                               
                 break;
               case false:
                 //FTF
