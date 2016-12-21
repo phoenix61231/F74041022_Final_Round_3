@@ -75,13 +75,13 @@ void line(int front,int left,int right){
     left_sta = true;
     right_sta = true;
   }
-  else if (left < 7) {
+  else if (left < 6) {
     turn(motor_right_back,180);
     front_sta = true;
     left_sta = true;
     right_sta = true;   
   }
-  else if (right < 7) {
+  else if (right < 6) {
     turn(motor_left_back,180);
     front_sta = true;
     left_sta = true;
@@ -151,7 +151,9 @@ void loop() {
         brcClient.endBRCClient();
         go=false;       
       }
-  }   
+  }
+  go = true;
+   
   //直線校正
   line(front_dis,left_dis,right_dis); 
   //路線判斷
@@ -214,7 +216,7 @@ void loop() {
                 break;
               case false:
                 //TFF
-                for_back(motor_right_for,motor_left_for,50);
+                for_back(motor_right_for,motor_left_for,100);
                 break;
             }
             break;
