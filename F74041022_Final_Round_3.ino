@@ -144,8 +144,9 @@ void loop() {
       //brcClient.endBRCClient();
       go=false;       
     }      
-  }
-    
+  }    
+  //way
+  if(go==true){
   if ((status = rfid.findTag(&card_type)) == STATUS_OK) {  
     digitalWrite(LED,HIGH);
     Serial.print("OK! ");    
@@ -158,10 +159,7 @@ void loop() {
   }else{
     digitalWrite(LED,LOW);
     Serial.println("No tag.");
-  }    
-  //go = true;   
-  //way
-  if(go==true){
+  }
   //line
   line(front_dis,left_dis,right_dis);   
   //move forward
