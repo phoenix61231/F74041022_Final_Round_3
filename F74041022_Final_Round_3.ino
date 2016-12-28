@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <BRCClient.h>
 #include <RFID.h>
+#include <MapMsg.h>
 
 #define front_trig 26
 #define front_echo 27
@@ -13,6 +14,7 @@
 #define motor_right_for 4
 #define motor_left_back 5
 #define motor_left_for 6
+#define LED 12
 
 #define front_dir 0
 #define left_dir 1
@@ -76,19 +78,20 @@ void line(int front,int left,int right){
     right_sta = true;
   }
   else if (left < 5) {
-    turn(motor_right_back,150);
+    turn(motor_right_back,170);
     front_sta = true;
     left_sta = true;
     right_sta = true;   
   }
   else if (right < 5 ){
-    turn(motor_left_back,150);
+    turn(motor_left_back,170);
     front_sta = true;
     left_sta = true;
     right_sta = true;    
   }
 }
 void setup() {
+  pinMode(LED,OUTPUT);
   pinMode(motor_right_back, OUTPUT);
   pinMode(motor_right_for, OUTPUT);
   pinMode(motor_left_back, OUTPUT);
@@ -96,16 +99,14 @@ void setup() {
   analogWrite(motor_right_for, 0);
   analogWrite(motor_right_back, 0);
   analogWrite(motor_left_for, 0);
-  analogWrite(motor_left_back, 0);
+  analogWrite(motor_left_back, 0);  
 
   Serial.begin(9600);
 
   SPI.begin();
   SPI.beginTransaction(SPISettings(10000000L, MSBFIRST, SPI_MODE3));
 
-  rfid.begin();
-  
-  Serial.begin(9600);
+  rfid.begin(); 
   
   while (!Serial)
     ;
@@ -118,60 +119,63 @@ void setup() {
   else
     Serial.println("ID register FAIL");
 }
-//調整轉彎後前進距離
 
 static uint8_t status;
 static uint16_t card_type;
 static uint8_t sn[MAXRLEN], snBytes;
 
 void loop() {
-  //測距
+  //distance
   long front_sec = front.timing(), left_sec = left.timing(), right_sec = right.timing();
   front_dis = front.convert(front_sec, Ultrasonic::CM);
   left_dis = left.convert(left_sec, Ultrasonic::CM);
   right_dis = right.convert(right_sec, Ultrasonic::CM);
 
-  /*if ((status = rfid.findTag(&card_type)) == STATUS_OK) {
-    Serial.print("OK! ");
-    Serial.println(card_type);
-    if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {
-      for (int i = 0; i < snBytes; ++i)
-        Serial.print(sn[i], HEX);
-      Serial.println();
-      rfid.piccHalt();
-    }
-  } else
-    Serial.println("No tag.");*/
-  
+  Serial.println(front_dis);
+  Serial.println(left_dis);
+  Serial.println(right_dis);
+
   CommMsg msg;
-  /*if (brcClient.receiveMessage(&msg)) {
-      if (msg.type==MSG_ROUND_START){
-        go=true;
-      }
-      else if(msg.type==MSG_ROUND_END){
-        brcClient.endBRCClient();
-        go=false;       
-      }
-  }*/
-  
-  go = true;     
-  //直線校正
-  line(front_dis,left_dis,right_dis); 
-  //路線判斷
-  if(go==true){   
-  //按照路線判斷走
+  if (brcClient.receiveMessage(&msg)) {
+    if (msg.type==MSG_ROUND_START){
+      go=true;
+    }
+    else if(msg.type==MSG_ROUND_END){
+      brcClient.endBRCClient();
+      go=false;       
+    }      
+  }
+    
+  if ((status = rfid.findTag(&card_type)) == STATUS_OK) {  
+    digitalWrite(LED,HIGH);
+    Serial.print("OK! ");    
+    Serial.println(card_type);
+    if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {      
+      rfid.piccHalt();
+      brcClient.requestMapData(sn,"REQUEST");
+    }
+  }else{
+    digitalWrite(LED,LOW);
+    Serial.println("No tag.");
+  }    
+  //go = true;   
+  //way
+  if(go==true){
+  //line
+  line(front_dis,left_dis,right_dis);   
+  //move forward
   if (back != true) {
     if (front_dis <= 8) { front_sta = false;    
     }
     else {  front_sta = true;
     }
        
-    if (left_dis >= 30) { left_sta = true;
+    if (left_dis >= 35) { left_sta = true;
     }
     else {  left_sta = false;
     }
     
-    if (right_dis >= 30) {  right_sta = true;
+    if (right_dis >= 35) {  right_sta = true;
     }
     else {  right_sta = false;
     }    
@@ -189,7 +193,7 @@ void loop() {
                 //TTF
                 if(front_dis>left_dis){
                   for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_right_for,570);                
+                  turn(motor_right_for,560);                
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = left_dir;
                 }
@@ -206,7 +210,7 @@ void loop() {
                 //TFT                
                 if(front_dis>right_dis){
                   for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_left_for,570);                
+                  turn(motor_left_for,560);                
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = right_dir;
                 }
@@ -231,13 +235,13 @@ void loop() {
                 //FTT
                 if(left_dis>right_dis){
                   for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_left_for,570);                
+                  turn(motor_left_for,560);                
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = front_dir;
                 }
                 else{
                   for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_right_for,570);                
+                  turn(motor_right_for,560);                
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = front_dir;
                 }                               
@@ -245,7 +249,7 @@ void loop() {
               case false:
                 //FTF
                 for_back(motor_right_for,motor_left_for,160);
-                turn(motor_right_for,570); 
+                turn(motor_right_for,560); 
                 for_back(motor_right_for,motor_left_for,1000);                
                 break;
             }
@@ -255,7 +259,7 @@ void loop() {
               case true:
                 //FFT
                 for_back(motor_right_for,motor_left_for,160);
-                turn(motor_left_for,570); 
+                turn(motor_left_for,560); 
                 for_back(motor_right_for,motor_left_for,1000);                
                 break;
               case false:
@@ -264,7 +268,7 @@ void loop() {
                   for_back(motor_right_back,motor_left_for,560);
                 }
                 else{
-                  for_back(motor_right_for,motor_left_back,560);
+                  for_back(motor_right_for,motor_left_back,620);
                 }                
                 back = true;
                 break;
@@ -284,20 +288,20 @@ void loop() {
     }
     else {  right_sta = false;
     }
-    //倒退       
+    //backward     
     if (left_sta != false || right_sta != false) {
       switch (last_cross) {
         case 0:
           for_back(motor_right_for,motor_left_for,1000);
           break;
         case 1:
-          for_back(motor_right_for,motor_left_for,260);
-          turn(motor_right_for,580);          
+          for_back(motor_right_for,motor_left_for,300);
+          turn(motor_right_for,560);          
           for_back(motor_right_for,motor_left_for,1000);
           break;
         case 2:
-          for_back(motor_right_for,motor_left_for,260);
-          turn(motor_left_for,580);
+          for_back(motor_right_for,motor_left_for,300);
+          turn(motor_left_for,560);
           for_back(motor_right_for,motor_left_for,1000);
           break;        
       }
