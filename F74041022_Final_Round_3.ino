@@ -141,7 +141,7 @@ void loop() {
       go=true;
     }
     else if(msg.type==MSG_ROUND_END){
-      brcClient.endBRCClient();
+      //brcClient.endBRCClient();
       go=false;       
     }      
   }
@@ -153,6 +153,7 @@ void loop() {
     if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {      
       rfid.piccHalt();
       brcClient.requestMapData(sn,"REQUEST");
+      for_back(motor_right_for,motor_left_for,200);
     }
   }else{
     digitalWrite(LED,LOW);
