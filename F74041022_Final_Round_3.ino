@@ -37,7 +37,7 @@
 
 #define TCP_PORT   5000
 #define MY_COMM_ID 0x23
-#define PARTNER_COMM_ID 0x24
+
 
 #define SPI_MOSI 51
 #define SPI_MISO 50
@@ -56,7 +56,7 @@ float front_dis, right_dis, left_dis;
 bool back = false, front_sta, left_sta, right_sta,go=false,finish=false;
 bool mapping[6][6] = {false},inf_loop = false;
 
-void for_back(int mot_1,int mot_2,int dur){
+void for_back(int mot_1,int mot_2,int dur){  
   analogWrite(mot_1, v);
   analogWrite(mot_2, v);
   delay(dur);
@@ -64,7 +64,7 @@ void for_back(int mot_1,int mot_2,int dur){
   analogWrite(mot_2,0);
 }
 
-void turn(int mot,int dur){
+void turn(int mot,int dur){  
   analogWrite(mot, v); 
   delay(dur);  
   analogWrite(mot,0);
@@ -119,11 +119,9 @@ void setup() {
   else
     Serial.println("ID register FAIL");
 }
-
 static uint8_t status;
 static uint16_t card_type;
 static uint8_t sn[MAXRLEN], snBytes;
-
 void loop() {
   //distance
   long front_sec = front.timing(), left_sec = left.timing(), right_sec = right.timing();
@@ -140,8 +138,7 @@ void loop() {
     if (msg.type==MSG_ROUND_START){
       go=true;
     }
-    else if(msg.type==MSG_ROUND_END){
-      //brcClient.endBRCClient();
+    else if(msg.type==MSG_ROUND_END){      
       go=false;       
     }      
   }    
@@ -154,8 +151,9 @@ void loop() {
     if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {      
       rfid.piccHalt();
       brcClient.requestMapData(sn,"REQUEST");
-      for_back(motor_right_for,motor_left_for,200);
+      for_back(motor_right_for,motor_left_for,200);            
     }
+    delay(1000);
   }else{
     digitalWrite(LED,LOW);
     Serial.println("No tag.");
@@ -306,7 +304,7 @@ void loop() {
       }
       back = false;      
     }
-    else {
+    else {      
       for_back(motor_right_for,motor_left_for,70);
     }
   }
