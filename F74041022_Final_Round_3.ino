@@ -10,10 +10,10 @@
 #define left_echo 23
 #define right_trig 24
 #define right_echo 25
-#define motor_right_back 3
-#define motor_right_for 4
+#define motor_right_back 7
+#define motor_right_for 6
 #define motor_left_back 5
-#define motor_left_for 6
+#define motor_left_for 4
 #define LED 12
 
 #define front_dir 0
@@ -23,13 +23,13 @@
 #define UART_RX 10
 #define UART_TX 2
 
-#define AP_SSID "PoPo"
-#define AP_PASSWD "07270727"
-#define TCP_IP "192.168.43.1"
+//#define AP_SSID "PoPo"
+//#define AP_PASSWD "07270727"
+//#define TCP_IP "192.168.43.1"
 
-//#define AP_SSID    "Test_Server_AP"
-//#define AP_PASSWD  "testserverap"
-//#define TCP_IP     "192.168.43.1"
+#define AP_SSID    "Test_Server_AP"
+#define AP_PASSWD  "testserverap"
+#define TCP_IP     "192.168.43.1"
 
 //#define AP_SSID    "programtheworld"
 //#define AP_PASSWD  "screamlab"
@@ -51,22 +51,22 @@ Ultrasonic right(right_trig, right_echo);
 BRCClient brcClient(UART_RX, UART_TX);
 RFID rfid(SPI_SS, MFRC522_RSTPD);
 
-int v = 140,last_cross, map_i, map_j;
+int v = 150,last_cross, map_i, map_j;
 float front_dis, right_dis, left_dis;
 bool back = false, front_sta, left_sta, right_sta,go=false,finish=false;
 bool mapping[6][6] = {false},inf_loop = false;
 
-void for_back(int mot_1,int mot_2,int dur){  
+void for_back(int mot_1,int mot_2,int dur){
   analogWrite(mot_1, v);
-  analogWrite(mot_2, v);
+  analogWrite(mot_2, v+30);
   delay(dur);
   analogWrite(mot_1,0);
   analogWrite(mot_2,0);
 }
 
-void turn(int mot,int dur){  
-  analogWrite(mot, v); 
-  delay(dur);  
+void turn(int mot,int dur){
+  analogWrite(mot, v);
+  delay(dur);
   analogWrite(mot,0);
 }
 
@@ -78,16 +78,16 @@ void line(int front,int left,int right){
     right_sta = true;
   }
   else if (left < 5) {
-    turn(motor_right_back,170);
+    turn(motor_right_back,200);
     front_sta = true;
     left_sta = true;
-    right_sta = true;   
+    right_sta = true;
   }
   else if (right < 5 ){
     turn(motor_left_back,170);
     front_sta = true;
     left_sta = true;
-    right_sta = true;    
+    right_sta = true;
   }
 }
 void setup() {
@@ -99,21 +99,21 @@ void setup() {
   analogWrite(motor_right_for, 0);
   analogWrite(motor_right_back, 0);
   analogWrite(motor_left_for, 0);
-  analogWrite(motor_left_back, 0);  
+  analogWrite(motor_left_back, 0);
 
   Serial.begin(9600);
 
   SPI.begin();
   SPI.beginTransaction(SPISettings(10000000L, MSBFIRST, SPI_MODE3));
 
-  rfid.begin(); 
-  
+  rfid.begin();
+
   while (!Serial)
     ;
 
   brcClient.begin(9600);
   brcClient.beginBRCClient(AP_SSID, AP_PASSWD, TCP_IP, TCP_PORT);
-  
+
   if (brcClient.registerID(MY_COMM_ID))
     Serial.println("ID register OK");
   else
@@ -138,87 +138,83 @@ void loop() {
     if (msg.type==MSG_ROUND_START){
       go=true;
     }
-    else if(msg.type==MSG_ROUND_END){      
-      go=false;       
-    }      
-  }    
+    else if(msg.type==MSG_ROUND_END){
+      go=false;
+    }
+  }
+
   //way
   if(go==true){
-  if ((status = rfid.findTag(&card_type)) == STATUS_OK) {  
+  if ((status = rfid.findTag(&card_type)) == STATUS_OK) {
     digitalWrite(LED,HIGH);
-    Serial.print("OK! ");    
+    Serial.print("OK! ");
     Serial.println(card_type);
-    if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {      
+    if ((status = rfid.readTagSN(sn, &snBytes)) == STATUS_OK) {
       rfid.piccHalt();
-      brcClient.requestMapData(sn,"REQUEST");
-      for_back(motor_right_for,motor_left_for,200);            
+      brcClient.requestMapData(sn);
+      for_back(motor_right_for,motor_left_for,300);
     }
     delay(1000);
   }else{
     digitalWrite(LED,LOW);
     Serial.println("No tag.");
   }
+
   //line
-  line(front_dis,left_dis,right_dis);   
+  line(front_dis,left_dis,right_dis);
   //move forward
-  if (back != true) {
-    if (front_dis <= 8) { front_sta = false;    
-    }
-    else {  front_sta = true;
-    }
-       
-    if (left_dis >= 35) { left_sta = true;
-    }
-    else {  left_sta = false;
-    }
-    
-    if (right_dis >= 35) {  right_sta = true;
-    }
-    else {  right_sta = false;
-    }    
-    
+  if (!back) {
+    if (front_dis <= 8) front_sta = false;
+    else  front_sta = true;
+
+    if (left_dis >= 35) left_sta = true;
+    else  left_sta = false;
+
+    if (right_dis >= 35)  right_sta = true;
+    else  right_sta = false;
+
     switch (front_sta) {
       case true:
         switch (left_sta) {
           case true:
             switch (right_sta) {
               case true:
-                //TTT                
-                for_back(motor_right_for,motor_left_for,1000);                
+                //TTT
+                for_back(motor_right_for,motor_left_for,1000);
                 break;
-              case false:  
+              case false:
                 //TTF
                 if(front_dis>left_dis){
-                  for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_right_for,560);                
+                  for_back(motor_right_for,motor_left_for,160);
+                  turn(motor_right_for,560);
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = left_dir;
                 }
-                else{                             
-                  for_back(motor_right_for,motor_left_for,500);                 
+                else{
+                  for_back(motor_right_for,motor_left_for,500);
                   last_cross = right_dir;
-                }                                      
+                }
                 break;
             }
             break;
           case false:
             switch (right_sta) {
               case true:
-                //TFT                
+                //TFT
                 if(front_dis>right_dis){
-                  for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_left_for,560);                
+                  for_back(motor_right_for,motor_left_for,160);
+                  turn(motor_left_for,560);
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = right_dir;
                 }
-                else{                             
-                  for_back(motor_right_for,motor_left_for,500);                 
+                else{
+                  for_back(motor_right_for,motor_left_for,500);
                   last_cross = left_dir;
-                }                               
+                }
                 break;
               case false:
                 //TFF
-                for_back(motor_right_for,motor_left_for,70);                
+                for_back(motor_right_for,motor_left_for,70);
                 break;
             }
             break;
@@ -231,23 +227,23 @@ void loop() {
               case true:
                 //FTT
                 if(left_dis>right_dis){
-                  for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_left_for,560);                
+                  for_back(motor_right_for,motor_left_for,160);
+                  turn(motor_left_for,560);
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = front_dir;
                 }
                 else{
-                  for_back(motor_right_for,motor_left_for,160);           
-                  turn(motor_right_for,560);                
+                  for_back(motor_right_for,motor_left_for,160);
+                  turn(motor_right_for,560);
                   for_back(motor_right_for,motor_left_for,1000);
                   last_cross = front_dir;
-                }                               
+                }
                 break;
               case false:
                 //FTF
                 for_back(motor_right_for,motor_left_for,160);
-                turn(motor_right_for,560); 
-                for_back(motor_right_for,motor_left_for,1000);                
+                turn(motor_right_for,560);
+                for_back(motor_right_for,motor_left_for,1000);
                 break;
             }
             break;
@@ -256,8 +252,8 @@ void loop() {
               case true:
                 //FFT
                 for_back(motor_right_for,motor_left_for,160);
-                turn(motor_left_for,560); 
-                for_back(motor_right_for,motor_left_for,1000);                
+                turn(motor_left_for,560);
+                for_back(motor_right_for,motor_left_for,1000);
                 break;
               case false:
                 //FFF
@@ -266,7 +262,7 @@ void loop() {
                 }
                 else{
                   for_back(motor_right_for,motor_left_back,620);
-                }                
+                }
                 back = true;
                 break;
             }
@@ -276,16 +272,13 @@ void loop() {
     }
   }
   else {
-    if (left_dis >= 80) { left_sta = true;
-    }
-    else {  left_sta = false;
-    }
-    
-    if (right_dis >= 80) {  right_sta = true;
-    }
-    else {  right_sta = false;
-    }
-    //backward     
+    if (left_dis >= 100) left_sta = true;
+    else  left_sta = false;
+
+    if (right_dis >= 100)  right_sta = true;
+    else  right_sta = false;
+
+    //backward
     if (left_sta != false || right_sta != false) {
       switch (last_cross) {
         case 0:
@@ -293,20 +286,20 @@ void loop() {
           break;
         case 1:
           for_back(motor_right_for,motor_left_for,300);
-          turn(motor_right_for,560);          
+          turn(motor_right_for,560);
           for_back(motor_right_for,motor_left_for,1000);
           break;
         case 2:
           for_back(motor_right_for,motor_left_for,300);
           turn(motor_left_for,560);
           for_back(motor_right_for,motor_left_for,1000);
-          break;        
+          break;
       }
-      back = false;      
+      back = false;
     }
     else {      
       for_back(motor_right_for,motor_left_for,70);
     }
   }
-  }  
+  }
 }
